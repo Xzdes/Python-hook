@@ -1,6 +1,13 @@
+import sys
 import ctypes
 import json
 from pynput import keyboard
+
+try:
+    sys.stdout.reconfigure(encoding='utf-8')
+except AttributeError:
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.detach(), encoding='utf-8')
 
 VK_CODE_TO_ENG = {
     0x41: 'a', 0x42: 'b', 0x43: 'c', 0x44: 'd', 0x45: 'e', 0x46: 'f', 0x47: 'g',
@@ -52,7 +59,7 @@ SERVICE_KEYS = {
     keyboard.Key.cmd_r: 'WIN',
     keyboard.Key.menu: 'APPS',
 }
-# Добавим F1-F12
+# F1-F12
 for i in range(1, 13):
     SERVICE_KEYS[getattr(keyboard.Key, f"f{i}")] = f"F{i}"
 
@@ -67,11 +74,8 @@ def is_shift_pressed():
 def on_press(key):
     out = None
     shift = is_shift_pressed()
-
-    # Сервисные (ENTER, TAB, F1 и др.)
     if key in SERVICE_KEYS:
         out = SERVICE_KEYS[key]
-    # Обычные буквы/цифры по vk-коду (англ. вне зависимости от языка)
     elif hasattr(key, 'vk') and key.vk in VK_CODE_TO_ENG:
         vk = key.vk
         if 0x60 <= vk <= 0x69 or 0x6A <= vk <= 0x6F:
@@ -82,7 +86,11 @@ def on_press(key):
             out = VK_CODE_TO_ENG[vk]
     if out:
         event = {"type": "key_press", "key": out}
-        print(json.dumps(event, ensure_ascii=False), flush=True)
+        print(json.dumps(event, ensure_ascii=True), flush=True)
 
-with keyboard.Listener(on_press=on_press) as listener:
-    listener.join()
+def main():
+    with keyboard.Listener(on_press=on_press) as listener:
+        listener.join()
+
+if __name__ == "__main__":
+    main()
